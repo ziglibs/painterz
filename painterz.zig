@@ -176,12 +176,12 @@ pub fn Canvas(
             src_x: isize,
             src_y: isize,
             width: usize,
-            height: isize,
+            height: usize,
             source: anytype,
             comptime getPixelImpl: fn (@TypeOf(source), x: isize, y: isize) Pixel,
         ) void {
-            const iwidth = @intCast(isize, width) - 1;
-            const iheight = @intCast(isize, height) - 1;
+            const iwidth = @intCast(isize, width);
+            const iheight = @intCast(isize, height);
 
             var dy: isize = 0;
             while (dy < iheight) : (dy += 1) {
