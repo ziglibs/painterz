@@ -167,6 +167,34 @@ pub fn Canvas(
                 }
             }
         }
+
+        /// Copies pixels from a source rectangle (src_x, src_y, width, height) into the framebuffer at (dest_x, dest_y, width, height).
+        pub fn copyRectangle(
+            self: *Self,
+            dest_x: isize,
+            dest_y: isize,
+            src_x: isize,
+            src_y: isize,
+            width: usize,
+            height: isize,
+            source: anytype,
+            comptime getPixelImpl: fn (@TypeOf(source), x: isize, y: isize) Pixel,
+        ) void {
+            const iwidth = @intCast(isize, width) - 1;
+            const iheight = @intCast(isize, height) - 1;
+
+            var dy: isize = 0;
+            while (dy < iheight) : (dy += 1) {
+                var dx: isize = 0;
+                while (dx < width) : (dx += 1) {
+                    self.setPixel(
+                        dest_x + dx,
+                        dest_y + dy,
+                        getPixelImpl(source, src_x + dx, src_y + dy),
+                    );
+                }
+            }
+        }
     };
 }
 
