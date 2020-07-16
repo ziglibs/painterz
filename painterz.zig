@@ -27,6 +27,7 @@ pub fn Canvas(
             setPixelImpl(self.framebuffer, x, y, color);
         }
 
+        /// Draws a line from (x0, y0) to (x1, y1).
         pub fn drawLine(self: *Self, x0: isize, y0: isize, x1: isize, y1: isize, color: Pixel) void {
             // taken from https://de.wikipedia.org/wiki/Bresenham-Algorithmus
             var dx = x1 - x0;
@@ -83,5 +84,96 @@ pub fn Canvas(
                 self.setPixel(x, y, color);
             }
         }
+
+        /// Draws a circle at local (x0, y0) with the given radius.
+        pub fn drawCircle(self: *Self, x0: isize, y0: isize, radius: usize, color: Pixel) void {
+            // taken from https://de.wikipedia.org/wiki/Bresenham-Algorithmus
+            const iradius = @intCast(isize, radius);
+
+            var f = 1 - iradius;
+            var ddF_x: isize = 0;
+            var ddF_y: isize = -2 * iradius;
+            var x: isize = 0;
+            var y: isize = iradius;
+
+            self.setPixel(x0, y0 + iradius, color);
+            self.setPixel(x0, y0 - iradius, color);
+            self.setPixel(x0 + iradius, y0, color);
+            self.setPixel(x0 - iradius, y0, color);
+
+            while (x < y) {
+                if (f >= 0) {
+                    y -= 1;
+                    ddF_y += 2;
+                    f += ddF_y;
+                }
+                x += 1;
+                ddF_x += 2;
+                f += ddF_x + 1;
+
+                self.setPixel(x0 + x, y0 + y, color);
+                self.setPixel(x0 - x, y0 + y, color);
+                self.setPixel(x0 + x, y0 - y, color);
+                self.setPixel(x0 - x, y0 - y, color);
+                self.setPixel(x0 + y, y0 + x, color);
+                self.setPixel(x0 - y, y0 + x, color);
+                self.setPixel(x0 + y, y0 - x, color);
+                self.setPixel(x0 - y, y0 - x, color);
+            }
+        }
+
+        /// Draws the outline of a rectangle.
+        pub fn drawRectangle(self: *Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
+            var i: isize = undefined;
+
+            const iwidth = @intCast(isize, width) - 1;
+            const iheight = @intCast(isize, height) - 1;
+
+            // top
+            i = 0;
+            while (i <= iwidth) : (i += 1) {
+                self.setPixel(x + i, y, color);
+            }
+
+            // bottom
+            i = 0;
+            while (i <= iwidth) : (i += 1) {
+                self.setPixel(x + i, y + iheight, color);
+            }
+
+            // left
+            i = 1;
+            while (i < iheight) : (i += 1) {
+                self.setPixel(x, y + i, color);
+            }
+
+            // right
+            i = 1;
+            while (i < iheight) : (i += 1) {
+                self.setPixel(x + iwidth, y + i, color);
+            }
+        }
+
+        /// Fills a rectangle area.
+        pub fn fillRectangle(self: *Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
+            const xlimit = x + @intCast(isize, width);
+            const ylimit = y + @intCast(isize, height);
+
+            var py = y;
+            while (py < ylimit) : (py += 1) {
+                var px = x;
+                while (px < xlimit) : (px += 1) {
+                    self.setPixel(px, py, color);
+                }
+            }
+        }
     };
+}
+
+comptime {
+    const T = Canvas(void, void, struct {
+        fn h(fb: void, x: isize, y: isize, pix: void) void {}
+    }.h);
+
+    std.meta.refAllDecls(T);
 }
