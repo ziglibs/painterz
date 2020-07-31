@@ -195,6 +195,40 @@ pub fn Canvas(
                 }
             }
         }
+
+        /// Copies pixels from a source rectangle into the framebuffer with the destination rectangle.
+        /// No pixel interpolation is done
+        pub fn copyRectangleStretched(
+            self: *Self,
+            dest_x: isize,
+            dest_y: isize,
+            dest_width: usize,
+            dest_height: usize,
+            src_x: isize,
+            src_y: isize,
+            src_width: usize,
+            src_height: usize,
+            bitmap: anytype,
+            comptime getPixelImpl: fn (@TypeOf(bitmap), x: isize, y: isize) Pixel,
+        ) void {
+            const iwidth = @intCast(isize, dest_width);
+            const iheight = @intCast(isize, dest_height);
+
+            var dy: isize = 0;
+            while (dy < iheight) : (dy += 1) {
+                var dx: isize = 0;
+                while (dx < iwidth) : (dx += 1) {
+                    var sx = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_width - 1) * @intToFloat(f32, dx) / @intToFloat(f32, dest_width - 1)));
+                    var sy = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_height - 1) * @intToFloat(f32, dy) / @intToFloat(f32, dest_height - 1)));
+
+                    self.setPixel(
+                        dest_x + dx,
+                        dest_y + dy,
+                        getPixelImpl(bitmap, sx, sy),
+                    );
+                }
+            }
+        }
     };
 }
 
