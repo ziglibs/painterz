@@ -237,5 +237,5 @@ comptime {
         fn h(fb: void, x: isize, y: isize, pix: void) void {}
     }.h);
 
-    std.meta.refAllDecls(T);
+    std.testing.refAllDecls(T);
 }
