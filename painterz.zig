@@ -6,6 +6,11 @@ fn sign(v: anytype) @TypeOf(v) {
     return 0;
 }
 
+pub const Point = struct {
+    x: isize,
+    y: isize,
+};
+
 pub fn Canvas(
     comptime Framebuffer: type,
     comptime Pixel: type,
@@ -164,6 +169,69 @@ pub fn Canvas(
                 var px = x;
                 while (px < xlimit) : (px += 1) {
                     self.setPixel(px, py, color);
+                }
+            }
+        }
+
+        pub fn drawPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
+            std.debug.assert(points.len >= 3);
+
+            var j = points.len - 1;
+            for (points) |pt0, i| {
+                defer j = i;
+                const pt1 = points[j];
+                self.drawLine(
+                    offset_x + pt0.x,
+                    offset_y + pt0.y,
+                    offset_x + pt1.x,
+                    offset_y + pt1.y,
+                    color,
+                );
+            }
+        }
+
+        pub fn fillPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
+            std.debug.assert(points.len >= 3);
+
+            var min_x: isize = std.math.maxInt(isize);
+            var min_y: isize = std.math.maxInt(isize);
+            var max_x: isize = std.math.minInt(isize);
+            var max_y: isize = std.math.minInt(isize);
+
+            for (points) |pt| {
+                min_x = std.math.min(min_x, pt.x);
+                min_y = std.math.min(min_y, pt.y);
+                max_x = std.math.max(max_x, pt.x);
+                max_y = std.math.max(max_y, pt.y);
+            }
+
+            // std.debug.print("limits: {} {} {} {}\n", .{ min_x, min_y, max_x, max_y });
+            // std.time.sleep(1_000_000_000);
+
+            var y: isize = min_y;
+            while (y <= max_y) : (y += 1) {
+                var x: isize = min_x;
+                while (x <= max_x) : (x += 1) {
+                    var inside = false;
+
+                    const p = Point{ .x = x, .y = y };
+
+                    // free after https://stackoverflow.com/a/17490923
+
+                    var j = points.len - 1;
+                    for (points) |p0, i| {
+                        defer j = i;
+                        const p1 = points[j];
+
+                        if ((p0.y > p.y) != (p1.y > p.y) and
+                            @intToFloat(f32, p.x) < @intToFloat(f32, (p1.x - p0.x) * (p.y - p0.y)) / @intToFloat(f32, (p1.y - p0.y)) + @intToFloat(f32, p0.x))
+                        {
+                            inside = !inside;
+                        }
+                    }
+                    if (inside) {
+                        self.setPixel(offset_x + x, offset_y + y, color);
+                    }
                 }
             }
         }
