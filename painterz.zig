@@ -190,7 +190,7 @@ pub fn Canvas(
             }
         }
 
-        pub fn fillPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
+        pub fn fillPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, comptime PointType: type, points: []const PointType) void {
             std.debug.assert(points.len >= 3);
 
             var min_x: isize = std.math.maxInt(isize);
@@ -245,8 +245,9 @@ pub fn Canvas(
             src_y: isize,
             width: usize,
             height: usize,
+            comptime enable_transparency: bool,
             source: anytype,
-            comptime getPixelImpl: fn (@TypeOf(source), x: isize, y: isize) Pixel,
+            comptime getPixelImpl: fn (@TypeOf(source), x: isize, y: isize) if (enable_transparency) ?Pixel else Pixel,
         ) void {
             const iwidth = @intCast(isize, width);
             const iheight = @intCast(isize, height);
@@ -255,11 +256,14 @@ pub fn Canvas(
             while (dy < iheight) : (dy += 1) {
                 var dx: isize = 0;
                 while (dx < width) : (dx += 1) {
-                    self.setPixel(
-                        dest_x + dx,
-                        dest_y + dy,
-                        getPixelImpl(source, src_x + dx, src_y + dy),
-                    );
+                    const pixel = getPixelImpl(source, src_x + dx, src_y + dy);
+                    if (enable_transparency) {
+                        if (pixel) |pix| {
+                            self.setPixel(dest_x + dx, dest_y + dy, pix);
+                        }
+                    } else {
+                        self.setPixel(dest_x + dx, dest_y + dy, pixel);
+                    }
                 }
             }
         }
@@ -276,8 +280,9 @@ pub fn Canvas(
             src_y: isize,
             src_width: usize,
             src_height: usize,
+            comptime enable_transparency: bool,
             bitmap: anytype,
-            comptime getPixelImpl: fn (@TypeOf(bitmap), x: isize, y: isize) Pixel,
+            comptime getPixelImpl: fn (@TypeOf(bitmap), x: isize, y: isize) if (enable_transparency) ?Pixel else Pixel,
         ) void {
             const iwidth = @intCast(isize, dest_width);
             const iheight = @intCast(isize, dest_height);
@@ -289,11 +294,14 @@ pub fn Canvas(
                     var sx = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_width - 1) * @intToFloat(f32, dx) / @intToFloat(f32, dest_width - 1)));
                     var sy = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_height - 1) * @intToFloat(f32, dy) / @intToFloat(f32, dest_height - 1)));
 
-                    self.setPixel(
-                        dest_x + dx,
-                        dest_y + dy,
-                        getPixelImpl(bitmap, sx, sy),
-                    );
+                    const pixel = getPixelImpl(bitmap, sx, sy);
+                    if (enable_transparency) {
+                        if (pixel) |pix| {
+                            self.setPixel(dest_x + dx, dest_y + dy, pix);
+                        }
+                    } else {
+                        self.setPixel(dest_x + dx, dest_y + dy, pixel);
+                    }
                 }
             }
         }
