@@ -252,6 +252,8 @@ pub fn Canvas(
             const iwidth = @intCast(isize, width);
             const iheight = @intCast(isize, height);
 
+            _ = iwidth;
+
             var dy: isize = 0;
             while (dy < iheight) : (dy += 1) {
                 var dx: isize = 0;
@@ -287,6 +289,8 @@ pub fn Canvas(
             const iwidth = @intCast(isize, dest_width);
             const iheight = @intCast(isize, dest_height);
 
+            _ = src_y;
+
             var dy: isize = 0;
             while (dy < iheight) : (dy += 1) {
                 var dx: isize = 0;
@@ -310,7 +314,12 @@ pub fn Canvas(
 
 comptime {
     const T = Canvas(void, void, struct {
-        fn h(fb: void, x: isize, y: isize, pix: void) void {}
+        fn h(fb: void, x: isize, y: isize, pix: void) void {
+            _ = fb;
+            _ = x;
+            _ = y;
+            _ = pix;
+        }
     }.h);
 
     std.testing.refAllDecls(T);
