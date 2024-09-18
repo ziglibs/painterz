@@ -28,12 +28,12 @@ pub fn Canvas(
         }
 
         /// Sets a pixel on the framebuffer.
-        pub fn setPixel(self: *Self, x: isize, y: isize, color: Pixel) void {
+        pub fn setPixel(self: Self, x: isize, y: isize, color: Pixel) void {
             setPixelImpl(self.framebuffer, x, y, color);
         }
 
         /// Draws a line from (x0, y0) to (x1, y1).
-        pub fn drawLine(self: *Self, x0: isize, y0: isize, x1: isize, y1: isize, color: Pixel) void {
+        pub fn drawLine(self: Self, x0: isize, y0: isize, x1: isize, y1: isize, color: Pixel) void {
             // taken from https://de.wikipedia.org/wiki/Bresenham-Algorithmus
             var dx = x1 - x0;
             var dy = y1 - y0;
@@ -91,9 +91,9 @@ pub fn Canvas(
         }
 
         /// Draws a circle at local (x0, y0) with the given radius.
-        pub fn drawCircle(self: *Self, x0: isize, y0: isize, radius: usize, color: Pixel) void {
+        pub fn drawCircle(self: Self, x0: isize, y0: isize, radius: usize, color: Pixel) void {
             // taken from https://de.wikipedia.org/wiki/Bresenham-Algorithmus
-            const iradius = @intCast(isize, radius);
+            const iradius: isize = @intCast(radius);
 
             var f = 1 - iradius;
             var ddF_x: isize = 0;
@@ -128,11 +128,11 @@ pub fn Canvas(
         }
 
         /// Draws the outline of a rectangle.
-        pub fn drawRectangle(self: *Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
+        pub fn drawRectangle(self: Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
             var i: isize = undefined;
 
-            const iwidth = @intCast(isize, width) - 1;
-            const iheight = @intCast(isize, height) - 1;
+            const iwidth = @as(isize, @intCast(width)) - 1;
+            const iheight = @as(isize, @intCast(height)) - 1;
 
             // top
             i = 0;
@@ -160,9 +160,9 @@ pub fn Canvas(
         }
 
         /// Fills a rectangle area.
-        pub fn fillRectangle(self: *Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
-            const xlimit = x + @intCast(isize, width);
-            const ylimit = y + @intCast(isize, height);
+        pub fn fillRectangle(self: Self, x: isize, y: isize, width: usize, height: usize, color: Pixel) void {
+            const xlimit = x + @as(isize, @intCast(width));
+            const ylimit = y + @as(isize, @intCast(height));
 
             var py = y;
             while (py < ylimit) : (py += 1) {
@@ -173,11 +173,11 @@ pub fn Canvas(
             }
         }
 
-        pub fn drawPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
+        pub fn drawPolygon(self: Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
             std.debug.assert(points.len >= 3);
 
             var j = points.len - 1;
-            for (points) |pt0, i| {
+            for (points, 0..) |pt0, i| {
                 defer j = i;
                 const pt1 = points[j];
                 self.drawLine(
@@ -190,7 +190,7 @@ pub fn Canvas(
             }
         }
 
-        pub fn fillPolygon(self: *Self, offset_x: isize, offset_y: isize, color: Pixel, comptime PointType: type, points: []const PointType) void {
+        pub fn fillPolygon(self: Self, offset_x: isize, offset_y: isize, color: Pixel, comptime PointType: type, points: []const PointType) void {
             std.debug.assert(points.len >= 3);
 
             var min_x: isize = std.math.maxInt(isize);
@@ -199,10 +199,10 @@ pub fn Canvas(
             var max_y: isize = std.math.minInt(isize);
 
             for (points) |pt| {
-                min_x = std.math.min(min_x, pt.x);
-                min_y = std.math.min(min_y, pt.y);
-                max_x = std.math.max(max_x, pt.x);
-                max_y = std.math.max(max_y, pt.y);
+                min_x = @min(min_x, pt.x);
+                min_y = @min(min_y, pt.y);
+                max_x = @max(max_x, pt.x);
+                max_y = @max(max_y, pt.y);
             }
 
             // std.debug.print("limits: {} {} {} {}\n", .{ min_x, min_y, max_x, max_y });
@@ -219,13 +219,17 @@ pub fn Canvas(
                     // free after https://stackoverflow.com/a/17490923
 
                     var j = points.len - 1;
-                    for (points) |p0, i| {
+                    for (points, 0..) |p0, i| {
                         defer j = i;
                         const p1 = points[j];
 
-                        if ((p0.y > p.y) != (p1.y > p.y) and
-                            @intToFloat(f32, p.x) < @intToFloat(f32, (p1.x - p0.x) * (p.y - p0.y)) / @intToFloat(f32, (p1.y - p0.y)) + @intToFloat(f32, p0.x))
-                        {
+                        const fpx: f32 = @floatFromInt(p.x);
+
+                        const fdx: f32 = @floatFromInt((p1.x - p0.x) * (p.y - p0.y));
+                        const fdy: f32 = @floatFromInt((p1.y - p0.y));
+                        const fp0x: f32 = @floatFromInt(p0.x);
+
+                        if ((p0.y > p.y) != (p1.y > p.y) and fpx < fdx / fdy + fp0x) {
                             inside = !inside;
                         }
                     }
@@ -238,7 +242,7 @@ pub fn Canvas(
 
         /// Copies pixels from a source rectangle (src_x, src_y, width, height) into the framebuffer at (dest_x, dest_y, width, height).
         pub fn copyRectangle(
-            self: *Self,
+            self: Self,
             dest_x: isize,
             dest_y: isize,
             src_x: isize,
@@ -249,8 +253,8 @@ pub fn Canvas(
             source: anytype,
             comptime getPixelImpl: fn (@TypeOf(source), x: isize, y: isize) if (enable_transparency) ?Pixel else Pixel,
         ) void {
-            const iwidth = @intCast(isize, width);
-            const iheight = @intCast(isize, height);
+            const iwidth: isize = @intCast(width);
+            const iheight: isize = @intCast(height);
 
             _ = iwidth;
 
@@ -273,7 +277,7 @@ pub fn Canvas(
         /// Copies pixels from a source rectangle into the framebuffer with the destination rectangle.
         /// No pixel interpolation is done
         pub fn copyRectangleStretched(
-            self: *Self,
+            self: Self,
             dest_x: isize,
             dest_y: isize,
             dest_width: usize,
@@ -286,8 +290,8 @@ pub fn Canvas(
             bitmap: anytype,
             comptime getPixelImpl: fn (@TypeOf(bitmap), x: isize, y: isize) if (enable_transparency) ?Pixel else Pixel,
         ) void {
-            const iwidth = @intCast(isize, dest_width);
-            const iheight = @intCast(isize, dest_height);
+            const iwidth: isize = @intCast(dest_width);
+            const iheight: isize = @intCast(dest_height);
 
             _ = src_y;
 
@@ -295,8 +299,8 @@ pub fn Canvas(
             while (dy < iheight) : (dy += 1) {
                 var dx: isize = 0;
                 while (dx < iwidth) : (dx += 1) {
-                    var sx = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_width - 1) * @intToFloat(f32, dx) / @intToFloat(f32, dest_width - 1)));
-                    var sy = src_x + @floatToInt(isize, std.math.round(@intToFloat(f32, src_height - 1) * @intToFloat(f32, dy) / @intToFloat(f32, dest_height - 1)));
+                    const sx = src_x + @as(isize, @intFromFloat(std.math.round(@as(f32, @floatFromInt(src_width - 1)) * @as(f32, @floatFromInt(dx)) / @as(f32, @floatFromInt(dest_width - 1)))));
+                    const sy = src_x + @as(isize, @intFromFloat(std.math.round(@as(f32, @floatFromInt(src_height - 1)) * @as(f32, @floatFromInt(dy)) / @as(f32, @floatFromInt(dest_height - 1)))));
 
                     const pixel = getPixelImpl(bitmap, sx, sy);
                     if (enable_transparency) {
@@ -310,17 +314,4 @@ pub fn Canvas(
             }
         }
     };
-}
-
-comptime {
-    const T = Canvas(void, void, struct {
-        fn h(fb: void, x: isize, y: isize, pix: void) void {
-            _ = fb;
-            _ = x;
-            _ = y;
-            _ = pix;
-        }
-    }.h);
-
-    std.testing.refAllDecls(T);
 }

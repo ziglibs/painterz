@@ -1,10 +1,12 @@
 # painterz
+
 The idea of this library is to provide platform-independent, embedded-feasible implementations of several drawing primitives.
 
 The library exports a generic `Canvas` type which is specialized on a `setPixel` function that will put pixels of type `Color` onto a `Framebuffer`.
 It's currently not possible or planned to do blending, but alpha test could be implemented by ignoring certain color values in the `setPixel` function.
 
 ## Usage Example
+
 ```zig
 const Pixel = packed struct {
     r: u8, g: u8, b: u8, a: u8
