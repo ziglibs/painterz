@@ -7,6 +7,10 @@ It's currently not possible or planned to do blending, but alpha test could be i
 
 ## Usage Example
 
+![Usage example rendering](docs/example.png)
+
+See [`src/example.zig`](src/example.zig) for a full usage example.
+
 ```zig
 const Pixel = packed struct {
     r: u8, g: u8, b: u8, a: u8

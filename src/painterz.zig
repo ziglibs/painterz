@@ -9,6 +9,10 @@ fn sign(v: anytype) @TypeOf(v) {
 pub const Point = struct {
     x: isize,
     y: isize,
+
+    pub fn new(x: isize, y: isize) Point {
+        return .{ .x = x, .y = y };
+    }
 };
 
 pub fn Canvas(
@@ -173,7 +177,7 @@ pub fn Canvas(
             }
         }
 
-        pub fn drawPolygon(self: Self, offset_x: isize, offset_y: isize, color: Pixel, points: []const Point) void {
+        pub fn drawPolygon(self: Self, offset_x: isize, offset_y: isize, color: Pixel, comptime PointType: type, points: []const PointType) void {
             std.debug.assert(points.len >= 3);
 
             var j = points.len - 1;

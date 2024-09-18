@@ -58,6 +58,7 @@ test "TestCanvas.drawPolygon" {
         10,
         20,
         .black,
+        painterz.Point,
         &.{
             painterz.Point{ .x = 10, .y = 40 },
             painterz.Point{ .x = 50, .y = 20 },
